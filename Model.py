@@ -33,7 +33,7 @@ class Model:
         self.tar = tf.placeholder(dtype=tf.int32, shape=[batch_size, ], name='target')
         self.W = tf.get_variable(name='W', initializer=tf.random_normal_initializer(0, 0.1),
                                  shape=[self.item_num, self.item_num], dtype=tf.float32)
-        self.f_embedding = tf.concat([self.embeddings, self.embedding_feat()], axis=1)
+        self.f_embedding = tf.concat([self.embeddings, self.embedding_context()], axis=1)
         self.in_embedding = self.embedding_suit()
         self.alpha = alpha
         self.beta = beta
@@ -50,30 +50,22 @@ class Model:
             [tf.nn.embedding_lookup(re_embeddings[i], self.n_session[i] - 1) for i in range(self.batch_size)])
         # 代码库的向量不需要更新
         logits = tf.matmul(tf.reshape(re_embeddings, [-1, self.out_size]), self.in_embedding, transpose_b=True)
-        # logi = tf.nn.relu(tf.matmul(logits, self.W))
-        # self.logits = self.logits/np.sum(self.logits)
         loss = tf.reduce_sum(
             tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.tar, logits=logits))
         # 查找所有变量的名称
         self.vars = tf.global_variables()
 
         if train:
-            # L2正则化,不对这几个参数进行正则化
-            # lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in self.vars if v.name not
-            #                    in ['bias', 'gamma', 'b', 'g', 'beta']]) * self.L2
             lossL2 = tf.add_n(
                 [tf.nn.l2_loss(re_embeddings), tf.nn.l2_loss(self.f_embedding), tf.nn.l2_loss(self.emb_smaller)])
             loss = self.alpha * loss + self.beta * lossL2
-            # 训练的是正则化参数
-            tf.summary.histogram('loss', loss)
-            # tf.summary.histogram('acc', self.accurate)
             return loss, tf.nn.softmax(logits)
         else:
             return loss, tf.nn.softmax(logits)
 
-    def embedding_feat(self):
+    def embedding_context(self):
         """
-        给向量进行嵌入。。。
+        为内容向量进行嵌入。。。
         :return:
         """
         self.f_w = tf.get_variable(name='f_w', shape=[self.f_dim, self.f_out_size],

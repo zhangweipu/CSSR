@@ -9,6 +9,7 @@ import scipy.io as sio
 from utils import *
 import metric as error
 from collections import defaultdict
+from sklearn.metrics import accuracy_score
 
 # 用户已经点击过的项
 used_items = defaultdict(set)
@@ -37,7 +38,7 @@ emb = pd.read_csv(r'D:\files\硕士期间\NeuRec-2.0\dataset\reset.csv', header=
 ccc = train_data['embedding']
 # ccc=pd.read_csv(opt.dataset)
 # ccc = pd.concat([ccc, emb], axis=1)
-feat = concat(path_feat)
+context = get_context(path_feat)
 # ccc = normalization(ccc)
 node_sum, dimension = ccc.shape
 print(dimension)
@@ -72,7 +73,7 @@ def train():
             # print(np.array(items).shape)
             # print("batch----{}".format(n_session))
             u, _, loss, logit, _, learn = model.run(fetch, tar=tar, item=items, embeddings=ccc,
-                                                    n_session=n_session, feat=feat)
+                                                    n_session=n_session, feat=context)
             for u, ites, ta in zip(user, items, tar):
                 used_items[u].update(ites + [ta])
             total_loss.append(loss)
@@ -95,7 +96,7 @@ def train():
         for items, tar, user, n_session in generate_batch(path_session_test, model.batch_size, shuffle=True):
             score, test_loss = model.run([model.test_logits, model.loss_test], tar=tar, item=items,
                                          embeddings=ccc,
-                                         n_session=n_session, feat=feat)
+                                         n_session=n_session, feat=context)
             for u, ites in zip(user, items):
                 used_items[u].update(ites)
             # print(u)
@@ -115,6 +116,7 @@ def train():
             print("k={};HR@k:{},MRR@K:{},NDCG@K:{}".format(k, np.mean(hit[k]), np.mean(mrr[k]),
                                                            np.mean(NDCG[k])))
             acc_show(hit[k], mrr[k], NDCG[k], best_result[k], best_epoch[k], test_loss_, epoch, k)
+
 
 def model_score(index, tar, k):
     NDCG, hit, mrr = [], [], []

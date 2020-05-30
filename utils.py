@@ -16,26 +16,14 @@ def get_item(path_session):
     items = []
     users = []
     tar = []
-    # max_size = 0
     with open(path_session, encoding='utf-8') as f:
-        # 这是没排序的session
         for line in f:
-            # note:-1是为了匹配矩阵的索引
             session = [int(s) - 1 for s in line.strip().split(',')]
-            size = len(session) - 2
-            # if max_size < size:
-            #     max_size = size
             if len(session[1:-1]) == 0:
-                # note:因为数据不全的原因先把只有一个的去掉
-                # print("--------------------0l --{}".format(session[0]))
                 continue
             users.append(session[0] + 1)
             items.append(session[1:-1])
             tar.append(session[-1])
-    # items_mat = []
-    # for item in items:
-    #     item_mat = item + (max_size - len(item)) * [0]
-    #     items_mat.append(item_mat)
     return np.array(items), np.array(tar), np.array(users)
 
 
@@ -58,16 +46,12 @@ def generate_batch(file_path, batch_size, shuffle=False):
         max_size = np.max(n_session)
         min_size = np.min(n_session)
         n_item = [item + (max_size - len(item)) * [0] for item in items[index]]
-        # n_item = [item for item in items[index]]
-        # todo:这个的作用。。
-        # n_mask = [] 需要满batchSize不然报错
-
         yield n_item, tar[index], user[index], n_session
 
 
-def concat(file_path):
+def get_context(file_path):
     """
-    加载向量额外的信息
+    加载github代码库的内容信息
     :param file_path:
     :return:
     """
@@ -76,6 +60,8 @@ def concat(file_path):
     print(df.shape[0])
     bb = df.iloc[:, 1:].values
     return bb
+
+
 def normalization(x):
     """"
     归一化到区间{0,1]
@@ -105,12 +91,3 @@ def means(x):
     total = np.sum(x, axis=1)
     total = total.reshape([shape[0], 1])
     return x / total
-
-
-if __name__ == '__main__':
-    # for i, k, j in generate_batch(100):
-    #     print(i)
-    # i, j, k = get_item()
-    # print(i)
-    # concat(path, 1)
-    pass
